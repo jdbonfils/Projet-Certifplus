@@ -1,0 +1,42 @@
+------Création de l'AC intermedaire---------	
+
+	mkdir intermediate $$ cd intermediate
+	mkdir certs crl csr newcerts private
+	chmod 700 private
+	touch index.txt
+	echo 1000 > serial
+	echo 1000 > crlnumber
+
+	#Création du fichier de config de l'AC intermediaire
+	touch ca-intermediate.cnf
+	#On peut reprendre openssl.cnf pour ce fichier et le modifier en fonction de nos besoins
+	
+	#Creation de la clé utilisant les courbes elliptiques + chiffrement avec AES de cette dernière
+	openssl ecparam -genkey -name prime256v1 -outform PEM | openssl ec -aes256 -out private/ca-intermediate.key.pem
+	#La passphrase que j'ai mis: Certiplus-intermediate-CA87000
+
+	cd ../
+	#Création du certificate signing request (CSR)
+	openssl req -config intermediate/ca-intermediate.cnf -new -sha256 -key intermediate/private/ca-intermediate.key.pem -out intermediate/csr/intermediate.csr.pem
+	
+	#On utilise le fichier de config de root-ca.cnf pour signer (avec la clé du CA-root) le CSR créé précédement
+	openssl ca -config ca-root.cnf -extensions v3_intermediate_ca -days 3650 -notext -md sha256 -in intermediate/csr/intermediate.csr.pem -out intermediate/certs/intermediate.cert.pem
+	#Puis on saisi la passphrase de ca-root.key.pem (Certiplus-root-CA87000)
+	#Sign the certificate? [y/n]: y
+	#Commit ? [y/n]: y
+	chmod 444 intermediate/certs/intermediate.cert.pem
+
+	#Vérification du certificat intermediaire
+	openssl x509 -noout -text -in intermediate/certs/intermediate.cert.pem
+
+	#Vérification du certificat intermediaire par rapport au certificat root
+	openssl verify -CAfile certs/ca-root.cert.pem intermediate/certs/intermediate.cert.pem
+	#Le resultat doit etre : intermediate/certs/intermediate.cert.pem: OK
+
+	#Création de la chaine de certificat:
+	cat intermediate/certs/intermediate.cert.pem certs/ca-root.cert.pem > intermediate/certs/ca-chain.cert.pem
+
+
+
+
+

@@ -1,0 +1,31 @@
+-----Génération d'un certificat pour le serveur------
+
+
+	#Génération de la clé utilisant les courbes elliptiques
+	openssl ecparam -out intermediate/private/certifplus.key.pem -name prime256v1 -genkey
+
+	cd intermediate/
+	#Création du CSR à partir de la clé privée générée et de la config du CA intermediaire(ca-intermediate.cnf)
+	openssl req -config ca-intermediate.cnf -key private/certifplus.key.pem -new -sha256 -out csr/certifplus.csr.pem
+	#Saisie des informations Attention: Common Name != du common name des CA
+
+	#Création du certificat à partir du csr
+	openssl ca -config ca-intermediate.cnf -extensions server_cert -days 375 -notext -md sha256 -in csr/certifplus.csr.pem -out certs/certifplus.cert.pem
+
+	#Dans intermediate/index.txt on doit voir : 1000 unknown ... /CN=certifplus
+
+	#Vérification du certificat : 
+ 	openssl x509 -noout -text -in certs/certifplus.cert.pem
+
+	#Résultat(Issuer = ca-intermediate,Subject = serveur frontale)
+	 	Issuer: C = FR, ST = France, O = Certiplus, OU = CA-Certiplus, CN = CA intermediaire de Certiplus, emailAddress = jean.de-bonfils@etu.unilim.fr
+		Validity
+		    Not Before: Apr  7 13:40:14 2021 GMT
+		    Not After : Apr 17 13:40:14 2022 GMT
+	 	Subject: C = FR, ST = France, L = Limoges, O = Certifplus, OU = Attestation Unit, CN = Unite d attestation de Certifplus, emailAddress = jeandebonfils@gmail.com
+
+
+	#Vérification que le certificat créé a une chaine de confiance valide
+	openssl verify -CAfile certs/ca-chain.cert.pem certs/certifplus.cert.pem
+	#Resultat:
+	certs/certifplus.cert.pem: OK

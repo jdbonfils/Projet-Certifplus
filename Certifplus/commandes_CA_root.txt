@@ -1,0 +1,24 @@
+-------Création de l'AC root---------
+	
+	mkdir ca $$ cd ca
+	mkdir certs crl newcerts private
+	chmod 700 private
+	touch index.txt
+	echo 1000 > serial
+
+	#Création du fichier de config pour l'AC
+	touch ca-root.cnf
+	#On peut reprendre openssl.cnf pour ce fichier et le modifier en fonction de nos besoins
+
+	#Création de la clé utilisant les courbes elliptiques + chiffrement avec AES de cette dernière
+	openssl ecparam -genkey -name prime256v1 -outform PEM | openssl ec -aes256 -out private/ca-root.key.pem
+	#La passphrase: Certiplus-root-CA87000
+
+	chmod 400 private/ca-root.key.pem
+
+	#Création du certificat racine à partir de la clé privée du CA
+	openssl req -config ca-root.cnf -key private/ca-root.key.pem -new -x509 -days 7300 -sha256 -extensions v3_ca -out certs/ca-root.cert.pem
+	chmod 444 certs/ca-root.cert.pem
+
+	#Vérification du certificat racine
+	openssl x509 -noout -text -in certs/ca-root.cert.pem

@@ -1,0 +1,61 @@
+---Création du TSA----
+
+	#Création d'un certificate signing request et de la clé avec RSA
+	openssl req -new -newkey rsa:2048 -subj "/C=FR/O=Certiplus/OU=TSA Certifplus/CN=TSA Certifplus" -keyout TSA/private/tsa.key -out TSA/tsa.csr
+	passphrase : Certiplus-TSA-CA87000
+
+	#Génération du certificat à partir du csr
+	openssl ca -config ca-root.cnf -in TSA/tsa.csr -out TSA/tsa.crt -extensions tsa_ext -days 365
+
+	#Création de la chaine de certificat
+	cat TSA/tsa.crt certs/ca-root.cert.pem > TSA/tsa-ca-chain.cert.pem
+
+
+
+---Création du timestamp grace au TSA---
+
+	#Création d'un timestamp request
+	openssl ts -query -config ca-root.cnf -data fic -out TSA/request.tsq -sha384
+		-Using configuration from ca-root.cnf
+
+	#Consulter la requête
+	openssl ts -query -in TSA/request.tsq -text
+
+	#Générer une réponse
+	openssl ts -reply -config ca-root.cnf -queryfile TSA/request.tsq -out TSA/response.tsr
+		-Using configuration from ca-root.cnf
+		-Enter PEM pass phrase: Certiplus-TSA-CA87000
+		-Response has been generated.
+
+	#Consulter une réponse
+	openssl ts -reply -config ca-root.cnf -in TSA/response.tsr -text
+		-Using configuration from ca-root.cnf
+		-Status info:
+		-Status: Granted.
+		-Status description: unspecified
+		-Failure info: unspecified
+
+		-TST info:
+		-Version: 1
+		-Policy OID: tsa_policy1
+		-Hash Algorithm: sha384
+		-Message data:
+		-    0000 - 38 b0 60 a7 51 ac 96 38-4c d9 32 7e b1 b1 e3 6a   8.`.Q..8L.2~...j
+		-    0010 - 21 fd b7 11 14 be 07 43-4c 0c c7 bf 63 f6 e1 da   !......CL...c...
+		-    0020 - 27 4e de bf e7 6f 65 fb-d5 1a d2 f1 48 98 b9 5b   'N...oe.....H..[
+		-Serial number: 0x02
+		-Time stamp: Apr 13 16:51:30 2021 GMT
+		-Accuracy: 0x01 seconds, 0x01F4 millis, 0x64 micros
+		-Ordering: yes
+		-Nonce: 0x4ACAB802759A46F9
+		-TSA: DirName:/C=FR/O=Certiplus/OU=TSA Certifplus/CN=TSA Certifplus
+		-Extensions:
+
+	#Vérification du timestamp
+	openssl ts -verify -config ca-root.cnf -queryfile TSA/request.tsq -in TSA/response.tsr -CAfile certs/ca-root.cert.pem -untrusted TSA/tsa.crt
+	Verification: OK
+
+	#Vérification du TSA par rapport au fichier
+	openssl ts -verify -config ca-root.cnf -data fic -in TSA/response.tsr -CAfile certs/ca-root.cert.pem -untrusted TSA/tsa.crt
+	Verification: OK
+

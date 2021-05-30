@@ -1,0 +1,55 @@
+----Mots de passes----
+
+Mdp d'accès à la clé privé de l'AC Root :		Certiplus-root-CA87000
+Mdp d'accès à la clé privé de l'AC Intermediaire :	Certiplus-intermediate-CA87000
+Mdp d'accès à la clé privé du TSA : 			Certiplus-TSA-CA87000
+(Attention Certiplus sans f ! )
+
+
+----Organisation----
+
+Répertoire de l'AC Root: Certifplus/CA/
+Répertoire de l'AC Intermediaire: Certifplus/CA/intermediate/
+Répertoire du TSA: Certifplus/CA/TSA/
+
+Répertoire contenant les programmes côté client : client/
+Répertoire contenant le Webservices principale : Certifplus/Serveur/
+Répertoire contenant le Timestamp webservice : Certifplus/CA/TSA/
+Répertoire contenant le script pour lancer le serveur frontal ainsi que les commandes pour la création des CA,TSA, certificat... : Certifplus/
+
+Certificat de l’application généré par l’AC : Certifplus/CA/intermediate/certs/certifplus.cert.pem
+
+
+---Lancement du timestamp Webservice--- Terminal 1
+
+cd Certifplus/CA/TSA/
+python3 timestampWebService.py
+
+
+---Lancement du serveur frontal--- Terminal 2
+
+cd Certifplus/
+./lancerServeurFrontal.sh
+
+
+---Lancement du serveur applicatif--- Terminal3
+
+cd Certifplus/Serveur/
+python3 WebService.py
+
+
+---Coté client--- Terminal 4
+
+cd client/
+
+#Créer une attestation avec une interface graphique
+python3 creerAttestationGUI.py
+
+#Créer une attestation en ligne de commande
+./creerAttestation.sh -o ../../../
+
+#Vérifier une attestation avec une interface graphique
+python3 verifierAttestationGUI.py
+
+#Vérifier une attestation avec une interface graphique
+./verifierAttestation.sh ../chemin/vers/attestation.Png
